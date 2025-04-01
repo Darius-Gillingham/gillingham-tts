@@ -6,9 +6,18 @@ const PORT = process.env.PORT || 3000;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const VOICE = 'onyx';
 
+let lastRequestTime = 0;
+
 app.get('/tts', async (req, res) => {
   const text = req.query.text;
   if (!text) return res.status(400).send('Missing text parameter.');
+
+  // Rate limiting (1 request per 21 seconds)
+  const now = Date.now();
+  if (now - lastRequestTime < 21000) {
+    return res.status(429).send('TTS rate limit: please wait before trying again.');
+  }
+  lastRequestTime = now;
 
   try {
     const response = await axios.post(
@@ -38,7 +47,11 @@ app.get('/tts', async (req, res) => {
     console.error('❌ TTS Error:');
     if (err.response) {
       console.error('🔻 Status:', err.response.status);
-      console.error('🔻 Data:', JSON.stringify(err.response.data, null, 2));
+      try {
+        console.error('🔻 Data:', JSON.stringify(err.response.data, null, 2));
+      } catch (e) {
+        console.error('🔻 Data (raw):', err.response.data);
+      }
     } else {
       console.error('🔻 Message:', err.message);
     }
