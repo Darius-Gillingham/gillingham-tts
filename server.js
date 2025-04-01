@@ -35,7 +35,13 @@ app.get('/tts', async (req, res) => {
 
     response.data.pipe(res);
   } catch (err) {
-    console.error('TTS error:', err.response?.data || err.message);
+    console.error('❌ TTS Error:');
+    if (err.response) {
+      console.error('🔻 Status:', err.response.status);
+      console.error('🔻 Data:', JSON.stringify(err.response.data, null, 2));
+    } else {
+      console.error('🔻 Message:', err.message);
+    }
     res.status(500).send('TTS failed.');
   }
 });
