@@ -7,16 +7,20 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const VOICE = 'onyx';
 
 let lastRequestTime = 0;
+const COOLDOWN_MS = 30 * 1000; // 30 seconds
 
 app.get('/tts', async (req, res) => {
   const text = req.query.text;
   if (!text) return res.status(400).send('Missing text parameter.');
 
-  // Rate limiting (1 request per 21 seconds)
   const now = Date.now();
-  if (now - lastRequestTime < 21000) {
-    return res.status(429).send('TTS rate limit: please wait before trying again.');
+  const timeSinceLastRequest = now - lastRequestTime;
+
+  if (timeSinceLastRequest < COOLDOWN_MS) {
+    const waitTime = Math.ceil((COOLDOWN_MS - timeSinceLastRequest) / 1000);
+    return res.status(429).send(`TTS rate limit: please wait ${waitTime}s before trying again.`);
   }
+
   lastRequestTime = now;
 
   try {
